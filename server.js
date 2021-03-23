@@ -3,15 +3,6 @@ CSC3916 HW3
 File: Server.js
 Description: Web API scaffolding for Movie API
  */
-(function() {    var childProcess = require("child_process");
-var oldSpawn = childProcess.spawn;
-function mySpawn() {        console.log('spawn called');
-console.log(arguments);
-var result = oldSpawn.apply(this, arguments);
-return result;
-}
-childProcess.spawn = mySpawn;})
-();
 
 var express = require('express');
 var bodyParser = require('body-parser');
@@ -55,7 +46,7 @@ router.route('/signup')
             res.json({success: false, msg: 'Please include both username and password to signup.'})
         } else {
             var user = new User();
-            user.name = req.body.name;
+            //user.name = req.body.name;
             user.username = req.body.username;
             user.password = req.body.password;
 
@@ -102,37 +93,17 @@ router.route('/signin')
     })
 
 router.route('/movies')
-    .delete(authJwtController.isAuthenticated, function(req, res) {
-            if(!req.body.title)
-            {
-                res.status(403).json({SUCCESS: false, MESSAGE: "Enter information"})
-            }
-            else
-                {
-                    Movie.findOneAndDelete(req.body.title, function(err, movie)
-                {
-                    if(err || !movie)
-                    {
-                        res.status(403).json({success:false, message: "Error deleting movie"});
-                    }
-                    else
-                    {
-                        res.status(200).json({success: true, message: "Movie Successfully Deleted"});
-                    }
-                })
-            }
 
-        }
-    )
+
     .put(authJwtController.isAuthenticated, function(req, res)
         {
-            if(!req.body.title || !req.body.update_title)
+            if(!req.body.title || !req.body.updateTitle)
             {
                 res.status(403).json({SUCCESS: false, MESSAGE: "Enter information"})
             }
             else
             {
-                Movie.findOneAndUpdate(req.body.title, req.body.update_title, function(err, movie)
+                Movie.findOneAndUpdate(req.body.title, req.body.updateTitle, function(err, movie)
                 {
                     if(err || !movie)
                     {
@@ -153,7 +124,7 @@ router.route('/movies')
             }
             else
             {
-                Movie.find(req.body).select("title year_released genre actors").exec(function(err, movie)
+                Movie.find({title:req.body.title}).select("title year genre actorsName").exec(function(err, movie)
                 {
                     if (err)
                     {
@@ -173,7 +144,7 @@ router.route('/movies')
         })
     .post(authJwtController.isAuthenticated, function (req, res) {
 
-        if (!req.body.title || !req.body.year_released || !req.body.genre || !req.body.actors[0] || !req.body.actors[1] || !req.body.actors[2]) {
+        if (!req.body.title || !req.body.year || !req.body.genre || !req.body.actorsName[0] || !req.body.actorsName[1] || !req.body.actorsName[2]) {
             res.json({success: false, message: "Incorrect Format"});
         }
         else
@@ -181,9 +152,9 @@ router.route('/movies')
             var movie = new Movie();
 
             movie.title = req.body.title;
-            movie.year_released = req.body.year_released;
+            movie.year = req.body.year;
             movie.genre = req.body.genre;
-            movie.actors = req.body.actors;
+            movie.actorsName = req.body.actorsName;
 
             movie.save(function (err)
             {
@@ -200,10 +171,31 @@ router.route('/movies')
         }
     })
 
-    .all(function(req, res){
-        res.json({success: false, msg: "Method not supported."});
+    .delete(authJwtController.isAuthenticated, function(req, res) {
+            if(!req.body.title)
+            {
+                res.status(403).json({SUCCESS: false, MESSAGE: "Invalid Entry"})
+            }
+            else
+            {
+                Movie.findOneAndDelete({title:req.body.title}, function(err, movie)
+                {
+                    if(err || !movie)
+                    {
+                        res.status(403).json({success:false, message: "Error deleting movie"});
+                    }
+                    else
+                    {
+                        res.status(200).json({success: true, message: "Movie Successfully Deleted"});
+                    }
+                })
+            }
 
-    });
+        }
+    )
+
+
+  
 
 
 app.use('/', router);
